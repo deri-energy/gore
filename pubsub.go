@@ -1,6 +1,7 @@
 package gore
 
 import (
+	"fmt"
 	"sync"
 	"time"
 )
@@ -83,6 +84,8 @@ func (s *Subscriptions) Close() {
 	if s.closed {
 		return
 	}
+	//关闭TCP连接
+	s.conn.Close()
 	s.closed = true
 	close(s.readyChannel)
 	close(s.messageChannel)
@@ -111,6 +114,11 @@ func (s *Subscriptions) Message() chan *Message {
 }
 
 func (s *Subscriptions) receive() {
+	defer func() {
+		if err := recover(); nil != err {
+			fmt.Println("gore.receive err:", err)
+		}
+	}()
 	for {
 		if s.IsClosed() {
 			break
@@ -123,6 +131,10 @@ func (s *Subscriptions) receive() {
 		}
 		for {
 			rep, err := readReply(s.conn)
+			//连接丢失后应立即退出go程
+			if nil == s.conn || s.conn.state == 0 {
+				return
+			}
 			if err != nil {
 				if s.throwError {
 					s.messageChannel <- nil

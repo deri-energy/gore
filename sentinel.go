@@ -203,7 +203,7 @@ func (s *Sentinel) connect() (err error) {
 		}
 		s.servers = append(s.servers[0:i], s.servers[i+1:]...)
 		s.servers = append(s.servers, server)
-		go s.monitor()
+		//go s.monitor()
 		return nil
 	}
 	return ErrNotConnected
